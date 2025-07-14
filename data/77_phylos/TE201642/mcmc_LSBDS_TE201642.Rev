@@ -1,0 +1,167 @@
+######################################################
+# Branch Specific Shifts in Diversification Incorpurates Shifts along Extinction branches 
+#
+# Inference of diversification rates and shifts in diversification rates both extinction and speciation along the branches of a phylogeny
+# 
+# Based on the RevBayes Tutorial below (accessed: 12/13/18). With suggestion from Michael R. May. https://revbayes.github.io/tutorials/divrate/branch_specific.html
+#
+# Authors: Jesus Martinez-Gomez, Michael Song, Carrie Tribble, Sebastian Hohna, Will Freymann, Chelsea D. Specht, Carl Rothfels 
+#
+######################################################
+
+#######################
+# General RevBayes Setttings 
+#######################
+
+analysisName = "TE201642" # Will appear on output file 
+comments = "" # added to end of output file name
+
+   ### MCMC Settings ###
+mcmc_gen      = 50000 
+burnin_gen    = mcmc_gen/10
+tune_freq     = 100 
+log_freq      = 1  
+print_screen  = 1   
+nrun          = 4
+
+   ### Monitors ###
+moves    = VectorMoves()
+monitors = VectorMonitors()
+
+#######################
+# Read in the phylogeny and specify useful variables
+#######################
+
+# Read in the observed phylogeny
+observed_phylogeny <- readTrees("phylo_TE2016.42.tr.cr.pr_.txt")[1]
+
+# Useful Variables
+taxa        <- observed_phylogeny.taxa()
+root        <- observed_phylogeny.rootAge()
+tree_length <- observed_phylogeny.treeLength()
+
+#######################
+# Birth-Death-Shift Process Global Parameters
+# rho extracted from Henao Diaz et al. (2019) BAMM control.files 
+#######################
+rho = 0.19
+NUM_TOTAL_SPECIES     = observed_phylogeny.ntips()/rho
+EXPECTED_NUM_EVENTS   = 1
+NUM_RATE_CATEGORIES   = 8 # 
+H = 0.587405
+
+#######################
+# Diversification Rate Priors:
+# A lognormal distribution with a mean equal to the expected diversification rate under a constent birth death process, discritiezed by number of rate categories. 
+#######################
+
+### Diversification Rate Hyper Prior ###
+rate_mean <- (NUM_TOTAL_SPECIES-2) / tree_length 
+rate_sd_speciation ~ dnExponential( 1.0 / H )
+  moves.append( mvScale(rate_sd_speciation, lambda=1, tune=true, weight=2.0) )
+rate_sd_extinction ~ dnExponential( 1.0 / H )
+  moves.append( mvScale(rate_sd_extinction, lambda=1, tune=true, weight=2.0) )
+
+### Speciation Rate Priors ###
+   ### Lognormal distributed on mean speciation rate
+speciation_mean ~ dnLoguniform( 1E-6, 1E2)
+speciation_mean.setValue( rate_mean / 5.0 )
+   moves.append( mvScale(speciation_mean, lambda=1, tune=true, weight=2.0) )
+
+  ### Create a deterministic variable for the speciation rate categories using a discretized lognormal distribution 
+#changing to mean instead of median, based on Mike’s recommendation 
+speciation_categories := fnDiscretizeDistribution( dnLognormal(ln(speciation_mean) - rate_sd_speciation * rate_sd_speciation * 0.5, rate_sd_speciation), NUM_RATE_CATEGORIES )
+
+### Extinction Rate Priors ###
+   ### Lognormal distributed on mean extinction 
+extinction_mean ~ dnLoguniform( 1E-6, 1E2)
+extinction_mean.setValue( rate_mean / 10.0 )
+   moves.append( mvScale(extinction_mean, lambda=1, tune=true, weight=2.0) )
+
+  ### Create a deterministic variable for the extinction rate categories using a discretized lognormal distribution 
+extinction_categories := fnDiscretizeDistribution( dnLognormal(ln(extinction_mean) - rate_sd_extinction * rate_sd_extinction * 0.5, rate_sd_extinction), NUM_RATE_CATEGORIES )
+
+### Match up Speciation and Extinction rate priors ###
+k = 1
+for(i in 1:NUM_RATE_CATEGORIES) {
+    for(j in 1:NUM_RATE_CATEGORIES) {
+        speciation[k]   := speciation_categories[i]
+        extinction[k++] := extinction_categories[j]
+    }
+}
+
+## Jointly moves speciation and extinctino as they are some what correlated 
+up_down_move = mvUpDownScale(weight=5.0)
+up_down_move.addVariable(speciation_mean,TRUE)
+up_down_move.addVariable(extinction_mean,TRUE)
+moves.append(  up_down_move )
+
+#######################
+# Root State Priors:
+#######################
+rate_cat_probs <- simplex( rep(1, NUM_RATE_CATEGORIES * NUM_RATE_CATEGORIES) )
+
+#######################
+# Rate-Shift Prior
+#######################
+### Create a exponential distributed variable for the rate of rate-shift events
+event_rate ~ dnExponential(tree_length/2) 
+event_rate.setValue(EXPECTED_NUM_EVENTS/tree_length)
+   moves.append( mvScale(event_rate, lambda=1, tune=true, weight=2.0) )
+
+#######################
+# Incomplete Sampling Prior
+#######################
+rho <- rho
+
+#######################
+# Continuous Time Birth Death Process
+#######################
+timetree ~ dnCDBDP( rootAge           = root,
+                    speciationRates   = speciation,
+                    extinctionRates   = extinction, 
+                    Q                 = fnJC(NUM_RATE_CATEGORIES * NUM_RATE_CATEGORIES),
+                    delta             = event_rate, 
+                    pi                = rate_cat_probs,
+                    rho               = rho,
+                    condition         = "time" )                    
+timetree.clamp(observed_phylogeny)
+
+#######################
+# Work Space Model Wrapper
+#######################
+mymodel = model(speciation)
+
+#######################
+# Set up Monitors
+#######################
+monitors.append( mnFile(printgen = log_freq,
+                        speciation_mean, 
+                        extinction_mean, 
+                        rate_sd_speciation,
+                        rate_sd_extinction, 
+                        event_rate, 
+                        filename=""+analysisName+"_LSBD_model_"+comments+".log", 
+                        separator = TAB) 
+                        )
+monitors.append( mnStochasticBranchRate(cdbdp = timetree, 
+                                        printgen = log_freq, 
+                                        filename = ""+analysisName+"_LSBDS_rates_"+comments+".log") 
+                                        )
+monitors.append( mnScreen(printgen = print_screen) )
+
+#######################
+# The mcmc 
+#######################
+myMCMC = mcmc(mymodel, monitors, moves, nruns = nrun, combine="mixed")
+
+#myMCMC.burnin(generations     = burnin_gen,
+#               tuningInterval  = tune_freq,
+#               underPrior      =  false)
+
+myMCMC.run(generations = mcmc_gen, 
+           tuningInterval = tune_freq, 
+           checkpointInterval = 100, 
+           checkpointFile= ""+analysisName+"_LSBD_checkpoint_"+comments+".state",
+           underPrior = false)
+q()
