@@ -17,7 +17,11 @@ metadata <- read.csv("data/metadata.csv") |>
 
 num_classes <- 7
 
-if (FALSE){
+condition_survival <- FALSE
+condition_marginal_survival <- TRUE
+condition_root_speciation <- TRUE
+
+if (TRUE){
 
     for (i in 1:nrow(metadata)){
         fname <- metadata[i,][["Filename"]]
@@ -38,8 +42,8 @@ if (FALSE){
         phy <- read.tree(paste0("data/", fname))
 
         if (length(phy$tip.label) < 20000){
-            analysis1 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, extinction_approximation = FALSE, verbose = F)
-            analysis2 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, extinction_approximation = TRUE, verbose = F)
+            analysis1 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = FALSE, verbose = F)
+            analysis2 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = TRUE, verbose = F)
 
             analyses <- list(analysis1, analysis2)
 
@@ -66,8 +70,8 @@ for (fname in filenames){
     phy <- read.tree(fname)
 
     if (length(phy$tip.label) < 20000){
-        analysis1 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, extinction_approximation = FALSE, verbose = F)
-        analysis2 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, extinction_approximation = TRUE, verbose = F)
+        analysis1 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = FALSE, verbose = F)
+        analysis2 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = TRUE, verbose = F)
 
         analyses <- list(analysis1, analysis2)
 

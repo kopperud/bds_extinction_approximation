@@ -48,7 +48,9 @@ dflambda <- d |>
 
 dfmu <- d |>
     select(mean_extinction, rate_shifts, name) |>
-    pivot_wider(names_from = rate_shifts, values_from = mean_extinction) 
+    pivot_wider(names_from = rate_shifts, values_from = mean_extinction) |>
+    mutate(delta = disallow - allow) |>
+    arrange(desc(delta))
 
 dfnetdiv <- d |>
     select(mean_netdiv, rate_shifts, name) |>

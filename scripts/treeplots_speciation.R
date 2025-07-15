@@ -7,9 +7,9 @@ library(patchwork)
 #low1 <- "#990000"
 #high1 <- "#ffb3b3"
 
-# reds
-low2 <- "#00441b"
-high2 <- "#c7e9c0"
+# blues
+low1 <- "#08306b"
+high1 <- "#c6dbef"
 
 dot_color <- "#fc9272"
 
@@ -28,14 +28,14 @@ for (fname in fnames){
     analysis2 <- analyses[[2]]
 
     limits <- c(
-        min(sapply(analyses, function(x) min(x$td@data$mean_mu))),
-        max(sapply(analyses, function(x) max(x$td@data$mean_mu)))
+        min(sapply(analyses, function(x) min(x$td@data$mean_lambda))),
+        max(sapply(analyses, function(x) max(x$td@data$mean_lambda)))
         )
 
-    p1 <- ggtree(analysis1$td, aes(color = mean_mu)) +
+    p1 <- ggtree(analysis1$td, aes(color = mean_lambda)) +
       ggtitle(paste0("Rate shifts allowed on extinct lineages")) +
       scale_colour_gradient(
-        name = "extinction rate", 
+        name = "speciation rate", 
         low = low1,
         high = high1,
         limits = limits,
@@ -46,10 +46,10 @@ for (fname in fnames){
       ) +
       geom_point2(aes(subset=(shift_bf > significance_threshold)), size = 1.5, color = "black", fill = dot_color, shape = 21, stroke = 0.5)
 
-    p2 <- ggtree(analysis2$td, aes(color = mean_mu)) +
+    p2 <- ggtree(analysis2$td, aes(color = mean_lambda)) +
       ggtitle(paste0("Rate shifts not allowed on extinct lineages")) +
       scale_colour_gradient(
-        name = "extinction rate", 
+        name = "speciation rate", 
         low = low1,
         high = high1,
         limits = limits,
@@ -71,7 +71,7 @@ for (fname in fnames){
             )
 
 
-    out_name <- paste0("figures/extinction/", bn, "_extinction.pdf")
+    out_name <- paste0("figures/speciation/", bn, "_speciation.pdf")
     ggsave(out_name, p, width = 300, height = 400, units = "mm")
 }
 
@@ -79,11 +79,11 @@ for (fname in fnames){
 #d1 <- as_tibble(analysis1$td)
 #d2 <- as_tibble(analysis2$td)
 #
-#mean_branch_mu1 <- sum(d1$branch.length * d1$mean_mu) / sum(d1$branch.length)
-#mean_branch_mu2 <- sum(d2$branch.length * d2$mean_mu) / sum(d2$branch.length)
+#mean_branch_mu1 <- sum(d1$branch.length * d1$mean_lambda) / sum(d1$branch.length)
+#mean_branch_mu2 <- sum(d2$branch.length * d2$mean_lambda) / sum(d2$branch.length)
 #
-#print(paste0("mean branch extinction rate: ", mean_branch_mu1, " (rate shifts allowed on extinct lineages)"))
-#print(paste0("mean branch extinction rate: ", mean_branch_mu2, " (rate shifts not allowed on extinct lineages)"))
+#print(paste0("mean branch speciation rate: ", mean_branch_mu1, " (rate shifts allowed on extinct lineages)"))
+#print(paste0("mean branch speciation rate: ", mean_branch_mu2, " (rate shifts not allowed on extinct lineages)"))
 
 
 
