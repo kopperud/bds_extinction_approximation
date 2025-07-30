@@ -16,7 +16,15 @@ make_summary <- function(x, name){
     return (df1)
 }
 
+make_summary2 <- function(x, name){
+    d <- as_tibble(x$td)
+    d$name <- name
+
+    return(d)
+}
+
 dfs <- list()
+dfs2 <- list()
 
 fnames <- Sys.glob("output/*.RData")
 
@@ -35,8 +43,20 @@ for (i in 1:length(fnames)){
     df2$rate_shifts <- "disallow"
     
     dfs[[i]] <- bind_rows(df1, df2)
+
+    df1_branches <- make_summary2(analysis1, bn)
+    df1_branches$rate_shifts <- "allow"
+    df2_branches <- make_summary2(analysis2, bn)
+    df2_branches$rate_shifts <- "disallow"
+
+    dfs2[[i]] <- bind_rows(df1_branches, df2_branches) 
 }
 
-d <- bind_rows(dfs)
+d1 <- bind_rows(dfs)
+write.csv(d1, "output/munged.csv")
 
-write.csv(d, "output/munged.csv")
+
+d2 <- bind_rows(dfs2)
+write.csv(d2, "output/munged_branches.csv")
+
+

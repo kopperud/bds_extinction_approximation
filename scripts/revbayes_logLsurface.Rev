@@ -1,0 +1,119 @@
+################################################################################
+#
+# RevBayes Example: Bayesian inference of diversification rates under a
+#                   branch-specific birth-death-shift model
+#
+#
+# authors: Sebastian Hoehna
+#
+################################################################################
+
+#NUM_MCMC_GEN = 2500
+#NUM_REPS = 2
+
+#######################
+# Reading in the Data #
+#######################
+
+DATASET = "conifers"
+NUM_RATE_CATEGORIES = 5
+
+# Read in the observed phylogeny
+#observed_phylogeny <- readTrees("./data/" + DATASET + ".tre")[1]
+observed_phylogeny <- readTrees("data/conifers/conifers.tre")[1]
+
+# Get the names of the taxa in the tree and the age of the tree. We need these later on.
+taxa <- observed_phylogeny.taxa()
+root <- observed_phylogeny.rootAge()
+tree_length <- observed_phylogeny.treeLength()
+
+# Global parameters for our analysis
+NUM_TOTAL_SPECIES = taxa.size()
+H = 0.587405
+
+PRIOR_SD = H
+
+####################
+# Create the rates #
+####################
+
+### rho is the probability of sampling species at the present
+### we assume complete taxon sampling
+rho <- observed_phylogeny.ntips() / NUM_TOTAL_SPECIES
+
+### Specify a prior on the speciation and extinction rates
+rate_mean <- (NUM_TOTAL_SPECIES-2) / tree_length
+
+### Draw the speciation rate mean from a loguniform prior
+speciation_mean ~ dnUniform( 1E-8, 1E4)
+speciation_mean.setValue( 0.1523495744 )
+
+speciation_sd <- H
+
+### Create a deterministic variable for the speciation rate categories
+### using a discretized lognormal distribution (the N-quantiles of it)
+speciation := fnDiscretizeDistribution( dnLognormal(ln(speciation_mean), speciation_sd), NUM_RATE_CATEGORIES )
+
+### Draw the extinction rate from a loguniform prior
+### Create a deterministic variable for the extinction rate categories
+### Assume that all extinction rates are equal
+extinction_mean ~ dnUniform( 1E-8, 1E4)
+extinction_mean.setValue( 0.1450639863 )
+
+extinction := rep(extinction_mean, NUM_RATE_CATEGORIES)
+
+### Create a exponential distributed variable for the rate of rate-shift events
+shift_rate ~ dnUniform( 0.0, 100 / tree_length )
+shift_rate.setValue( 0.0009587719 )
+
+### Create a uniformly distributed variable for the category at the root
+rate_cat_probs <- simplex( rep(1, NUM_RATE_CATEGORIES) )
+
+#### construct a variable for the tree drawn from a birth death process
+timetree_allow ~ dnCDBDP( rootAge           = root,
+                    speciationRates   = speciation,
+                    extinctionRates   = extinction,
+                    Q                 = fnJC(NUM_RATE_CATEGORIES),
+                    delta             = shift_rate,
+                    pi                = rate_cat_probs,
+                    rho               = rho,
+                    condition         = "time",
+                    allowRateShiftsAtExtinctLineages = TRUE )
+
+timetree_disallow ~ dnCDBDP( rootAge           = root,
+                    speciationRates   = speciation,
+                    extinctionRates   = extinction,
+                    Q                 = fnJC(NUM_RATE_CATEGORIES),
+                    delta             = shift_rate,
+                    pi                = rate_cat_probs,
+                    rho               = rho,
+                    condition         = "time",
+                    allowRateShiftsAtExtinctLineages = FALSE )
+
+### clamp the model with the "observed" tree
+timetree_allow.clamp(observed_phylogeny)
+timetree_disallow.clamp(observed_phylogeny)
+
+shift_rates = seq(0.0, 0.001, 0.000025)
+
+
+
+
+for (i in 1:shift_rates.size()){
+    shift_rate.setValue(shift_rates[i])
+
+    lnl = timetree_allow.lnProbability()
+    lnls1[i] = lnl
+
+    lnl = timetree_disallow.lnProbability()
+    lnls2[i] = lnl
+}
+
+
+print("shift_rates = [", shift_rates*1000, "] / 1000")
+print("lnls1 = [", lnls1, "]")
+print("lnls2 = [", lnls2, "]")
+
+
+
+

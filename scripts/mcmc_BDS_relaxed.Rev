@@ -1,0 +1,107 @@
+
+DIRNAME              = args[1]
+FILENAME             = args[2] 
+NUM_REPS             = args[3]
+NUM_MCMC_ITERATIONS  = args[4]
+
+NUM_RATE_CLASSES = 5
+
+#######################
+# Reading in the Data #
+#######################
+
+# Read in the observed phylogeny
+observed_phylogeny <- readTrees("data/"+DIRNAME+"/"+FILENAME)[1]
+
+# Get the names of the taxa in the tree and the age of the tree. We need these later on.
+taxa <- observed_phylogeny.taxa()
+root <- observed_phylogeny.rootAge()
+tree_length <- observed_phylogeny.treeLength()
+
+
+# Create some vector for the moves and monitors of this analysis
+moves    = VectorMoves()
+monitors = VectorMonitors()
+
+# Global parameters for our analysis
+H = 0.587405
+
+####################
+# Create the rates #
+####################
+
+### Specify a prior on the speciation and extinction rates
+### Create a lognormal distributed variable for the mean speciation rate
+speciation_mean ~ dnLognormal(ln(0.25), H)
+speciation_mean.setValue(0.30)
+moves.append( mvScale(speciation_mean, lambda=1, tune=true, weight=2.0) )
+
+speciation_sd ~ dnLognormal(ln(H), 0.2 )
+speciation_sd.setValue( H )
+moves.append( mvScale(speciation_sd, lambda=1, tune=true, weight=2.0) )
+
+### Create a lognormal distributed variable for the mean extinction rate
+extinction_mean ~ dnLognormal(ln(0.15), H )
+extinction_mean.setValue(0.20)
+moves.append( mvScale(extinction_mean, lambda=1, tune=true, weight=1.0) )
+
+extinction_sd ~ dnLognormal(ln(H), 0.2 )
+extinction_sd.setValue( H )
+moves.append( mvScale(extinction_sd, lambda=1, tune=true, weight=1.0) )
+
+## shift rates
+alpha ~ dnUniform(0.0, 0.15)
+#beta ~ dnUniform(0.0, 0.15)
+beta := alpha
+
+alpha.setValue( 0.001 )
+#beta.setValue( 0.002 )
+moves.append( mvScale(alpha, lambda=1, tune=true, weight=1.0) )
+#moves.append( mvScale(beta, lambda=1, tune=true, weight=1.0) )
+
+### rho is the probability of sampling species at the present
+### they are simulated data so rho is 1.0
+rho <- 1.0
+
+#### construct a variable for the tree drawn from a birth death process
+timetree ~ dnFastBirthDeathShift( rootAge  = root,
+                    speciationScale        = speciation_mean,
+                    extinctionScale        = extinction_mean,
+                    speciationSD           = speciation_sd,
+                    extinctionSD           = extinction_sd,
+                    numSpeciationClasses   = NUM_RATE_CLASSES,
+                    numExtinctionClasses   = NUM_RATE_CLASSES,
+                    alpha                  = alpha,
+                    beta                   = beta,
+                    rho                    = rho,
+                    condition              = "survival" )
+
+### clamp the model with the "observed" tree
+timetree.clamp(observed_phylogeny)
+
+
+#############
+# The Model #
+#############
+
+### workspace model wrapper ###
+mymodel = model(speciation_mean)
+
+### set up the monitors that will output parameter values to file and screen
+monitors.append( mnScreen(printgen=10, speciation_mean, extinction_mean, alpha, beta))
+monitors.append( mnBirthDeathShift(bdsp=timetree, printgen=5, filename="output/" + DIRNAME + "/rates_"+FILENAME+".log") )
+monitors.append( mnModel(filename="output/" + DIRNAME + "/" + FILENAME + ".log",printgen=5, separator = TAB) )
+
+
+################
+# The Analysis #
+################
+
+### workspace mcmc
+mymcmc = mcmc(mymodel, monitors, moves, nruns=NUM_REPS, combine="mixed")
+
+### run the MCMC
+mymcmc.run(generations=NUM_MCMC_ITERATIONS, tuningInterval=200)
+
+## quit ##
+q()

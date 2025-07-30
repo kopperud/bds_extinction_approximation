@@ -4,12 +4,12 @@ library(ggplot2)
 library(patchwork)
 
 
-#low1 <- "#990000"
-#high1 <- "#ffb3b3"
-
 # reds
-low2 <- "#00441b"
-high2 <- "#c7e9c0"
+low1 <- "#990000"
+high1 <- "#ffb3b3"
+
+#low1 <- "#00441b"
+#high1 <- "#c7e9c0"
 
 dot_color <- "#fc9272"
 

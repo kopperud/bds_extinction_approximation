@@ -131,4 +131,5 @@ foo("output/JO2016.RData", "figures/Corvids.pdf", 400, 250)
 foo("output/Salvia_Kriebel2019.RData", "figures/Salvia.pdf", 400, 250)
 foo("output/Aristolochiaceae_Allio2021.RData", "figures/Butterflies.pdf", 400, 300)
 foo("output/Ericales_Rose2018.RData", "figures/Ericales.pdf", 400, 250)
+foo("output/conifers.Rdata", "figures/conifers.pdf", 400, 250)
 
