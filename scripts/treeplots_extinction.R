@@ -27,6 +27,10 @@ for (fname in fnames){
     analysis1 <- analyses[[1]]
     analysis2 <- analyses[[2]]
 
+    analyses[[3]] <- NULL
+    analyses[[4]] <- NULL
+    analyses[[5]] <- NULL
+
     limits <- c(
         min(sapply(analyses, function(x) min(x$td@data$mean_mu))),
         max(sapply(analyses, function(x) max(x$td@data$mean_mu)))

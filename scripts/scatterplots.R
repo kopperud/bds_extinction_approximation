@@ -4,6 +4,8 @@ library(tidytree)
 library(dplyr)
 library(tidyr)
 library(patchwork)
+library(ape)
+library(ggrepel)
 
 make_summary <- function(x, name){
     d <- as_tibble(x$td)
@@ -14,7 +16,9 @@ make_summary <- function(x, name){
             "mean_extinction" = sum(d$mean_mu * d$branch.length) / sum(d$branch.length),
             "mean_speciation" = sum(d$mean_lambda * d$branch.length) / sum(d$branch.length),
             "mean_netdiv" = sum(d$mean_netdiv * d$branch.length) / sum(d$branch.length),
-            "name" = name
+            "name" = name,
+            "height" = max(node.depth.edgelength(x$td@phylo)),
+            "ntip" = length(x$td@phylo$tip.label),
                  )
     return (df1)
 }
@@ -42,6 +46,8 @@ for (i in 1:length(fnames)){
 
 d <- bind_rows(dfs)
 
+#write.csv(d, "
+
 dflambda <- d |>
     select(mean_speciation, rate_shifts, name) |>
     pivot_wider(names_from = rate_shifts, values_from = mean_speciation) 
@@ -65,7 +71,7 @@ dfNstar <- d |>
     pivot_wider(names_from = rate_shifts, values_from = no_signif_shifts) 
 
 p1 <- dflambda |>
-    ggplot(aes(x = allow, y = disallow)) +
+    ggplot(aes(x = allow, y = disallow, color = name)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, linetype = 2) +
     labs(x = "rate shifts allowed on extinct lineages", y = "rate shifts not allowed on extinct lineages") +
@@ -73,7 +79,7 @@ p1 <- dflambda |>
     theme_classic() 
 
 p2 <- dfmu |> 
-    ggplot(aes(x = allow, y = disallow)) +
+    ggplot(aes(x = allow, y = disallow, color = name)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, linetype = 2) +
     labs(x = "rate shifts allowed on extinct lineages", y = "rate shifts not allowed on extinct lineages") +
@@ -81,7 +87,7 @@ p2 <- dfmu |>
     theme_classic() 
 
 p3 <- dfnetdiv |> 
-    ggplot(aes(x = allow, y = disallow)) +
+    ggplot(aes(x = allow, y = disallow, color = name)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, linetype = 2) +
     labs(x = "rate shifts allowed on extinct lineages", y = "rate shifts not allowed on extinct lineages") +
@@ -89,7 +95,7 @@ p3 <- dfnetdiv |>
     theme_classic() 
 
 p4 <- dfeta |> 
-    ggplot(aes(x = allow, y = disallow)) +
+    ggplot(aes(x = allow, y = disallow, color = name)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, linetype = 2) +
     labs(x = "rate shifts allowed on extinct lineages", y = "rate shifts not allowed on extinct lineages") +
@@ -97,7 +103,7 @@ p4 <- dfeta |>
     theme_classic() 
 
 p5 <- dfNstar |> 
-    ggplot(aes(x = allow, y = disallow)) +
+    ggplot(aes(x = allow, y = disallow, color = name)) +
     geom_point() +
     geom_abline(slope = 1, intercept = 0, linetype = 2) +
     labs(x = "rate shifts allowed on extinct lineages", y = "rate shifts not allowed on extinct lineages") +
@@ -105,6 +111,36 @@ p5 <- dfNstar |>
     theme_classic() 
 
 
-p <- p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3)
+p <- p1 + p2 + p3 + p4 + p5 + plot_layout(ncol = 3) &
+    theme(legend.position = "none")
 
 ggsave("figures/scatter.pdf", p, width = 250, height = 200, units = "mm")
+
+
+##
+dfx <- d |> 
+    dplyr::filter(rate_shifts == "allow") |>
+    select(name, eta, ntip, height)
+
+dfx1 <- left_join(dfmu, dfx, by = "name")
+dfx1$diff <- dfx1$disallow - dfx1$allow
+dfx1$sq_err <- (dfx1$disallow - dfx1$allow)^2
+
+
+dfx2 <- left_join(dfeta, dfx, by = "name")
+dfx2$diff <- dfx2$disallow - dfx2$allow
+dfx2$sq_err <- (dfx2$disallow - dfx2$allow)^2
+
+
+
+#p1 <- ggplot(dfx1, aes(x = height, y = diff, label = round(ntip, 1))) + 
+p1 <- ggplot(dfx1, aes(x = height, y = diff, label = name)) + 
+    geom_point() +
+    geom_abline(slope = 0, intercept = 0, linetype = 2) +
+    theme_classic() +
+    geom_text_repel() +
+    scale_x_log10()
+
+
+
+

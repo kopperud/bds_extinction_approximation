@@ -27,9 +27,11 @@ foo <- function(fname, outname, width, height){
 
     load(fname) ## loads the `analyses` variable
 
-
     analysis1 <- analyses[[1]]
     analysis2 <- analyses[[2]]
+    analyses[[3]] <- NULL
+    analyses[[4]] <- NULL
+    analyses[[5]] <- NULL
 
     th <- max(node.depth.edgelength(analysis1$td@phylo))
 
@@ -40,7 +42,6 @@ foo <- function(fname, outname, width, height){
         min(sapply(analyses, function(x) min(x$td@data$mean_lambda))),
         max(sapply(analyses, function(x) max(x$td@data$mean_lambda)))
         )
-
 
     limits2 <- c(
         min(sapply(analyses, function(x) min(x$td@data$mean_netdiv))),
@@ -116,9 +117,9 @@ foo <- function(fname, outname, width, height){
             plot.margin = unit(c(0,0,0,0), "mm"),
             axis.title.x = element_blank(),
             axis.title.y = element_blank(),
-            legend.key.size = unit(1, 'cm'), #change legend key size
-            legend.key.height = unit(1, 'cm'), #change legend key height
-            legend.key.width = unit(1.5, 'cm'), #change legend key width
+            legend.key.size = unit(10, 'mm'), #change legend key size
+            legend.key.height = unit(10, 'mm'), #change legend key height
+            legend.key.width = unit(10, 'mm'), #change legend key width
             legend.title = element_text(size=14), #change legend title font size
             legend.text = element_text(size=10) #change legend text font size
             ) 
@@ -127,9 +128,11 @@ foo <- function(fname, outname, width, height){
     ggsave(out_name, p, width = width, height = height, units = "mm")
 }
 
-foo("output/JO2016.RData", "figures/Corvids.pdf", 400, 250)
-foo("output/Salvia_Kriebel2019.RData", "figures/Salvia.pdf", 400, 250)
-foo("output/Aristolochiaceae_Allio2021.RData", "figures/Butterflies.pdf", 400, 300)
-foo("output/Ericales_Rose2018.RData", "figures/Ericales.pdf", 400, 250)
-foo("output/conifers.Rdata", "figures/conifers.pdf", 400, 250)
+#foo("output/JO2016.RData", "figures/Corvids.pdf", 400, 250)
+#foo("output/Salvia_Kriebel2019.RData", "figures/Salvia.pdf", 400, 250)
+#foo("output/Aristolochiaceae_Allio2021.RData", "figures/Butterflies.pdf", 400, 300)
+#foo("output/Ericales_Rose2018.RData", "figures/Ericales.pdf", 400, 250)
+foo("output/pg2575.RData", "figures/Passeriformes.pdf", 150*1.6, 150)
+#foo("output/conifers.Rdata", "figures/conifers.pdf", 150*1.6, 150)
+foo("output/Pinophyta_Leslie2012.RData", "figures/conifers_leslie2012.pdf", 150*1.6, 150)
 

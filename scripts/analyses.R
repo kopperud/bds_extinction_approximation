@@ -15,11 +15,12 @@ metadata <- read.csv("data/metadata.csv") |>
 #   phy <- read.nexus(x)
 #   write.tree(phy, x)
 
-num_classes <- 7
+num_speciation_classes <- 9
+num_extinction_classes <- 1
 
 condition_survival <- FALSE
-condition_marginal_survival <- TRUE
 condition_root_speciation <- TRUE
+condition_marginal <- TRUE
 
 if (TRUE){
 
@@ -42,10 +43,19 @@ if (TRUE){
         phy <- read.tree(paste0("data/", fname))
 
         if (length(phy$tip.label) < 20000){
-            analysis1 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = FALSE, verbose = F)
-            analysis2 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = TRUE, verbose = F)
+            num_speciation_classes <- 5
+            num_extinction_classes <- 5
 
-            analyses <- list(analysis1, analysis2)
+            analysis1 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = FALSE, verbose = F)
+            analysis2 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = TRUE, verbose = F)
+
+
+            num_speciation_classes <- 5
+            num_extinction_classes <- 1
+            analysis3 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = FALSE, verbose = F)
+            analysis4 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = TRUE, verbose = F)
+
+            analyses <- list(analysis1, analysis2, analysis3, analysis4, sampling_fraction)
 
             s <- paste0("output/", bn, ".RData")
             save(analyses, file = s)
@@ -70,10 +80,18 @@ for (fname in filenames){
     phy <- read.tree(fname)
 
     if (length(phy$tip.label) < 20000){
-        analysis1 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = FALSE, verbose = F)
-        analysis2 <- fit_bds(phy, sampling_fraction, num_classes = num_classes, condition_survival = condition_survival, condition_marginal_survival = condition_marginal_survival, condition_root_speciation = condition_root_speciation, extinction_approximation = TRUE, verbose = F)
+        num_speciation_classes <- 5
+        num_extinction_classes <- 5
 
-        analyses <- list(analysis1, analysis2)
+        analysis1 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = FALSE, verbose = F)
+        analysis2 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = TRUE, verbose = F)
+
+        num_speciation_classes <- 5
+        num_extinction_classes <- 1
+        analysis3 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = FALSE, verbose = F)
+        analysis4 <- fit_bds(phy, sampling_fraction, num_speciation_classes = num_speciation_classes, num_extinction_classes = num_extinction_classes, condition_survival = condition_survival, condition_root_speciation = condition_root_speciation, condition_marginal = condition_marginal, extinction_approximation = TRUE, verbose = F)
+
+        analyses <- list(analysis1, analysis2, analysis3, analysis4, sampling_fraction)
 
         s <- paste0("output/", dname, ".RData")
         save(analyses, file = s)
