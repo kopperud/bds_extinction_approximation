@@ -90,6 +90,10 @@ foo <- function(fname, outname, width, height){
     analyses[[4]] <- NULL
     analyses[[5]] <- NULL
 
+    analysis1$td@data$shift_bf[is.infinite(analysis1$td@data$shift_bf)] <- 1.0
+    analysis2$td@data$shift_bf[is.infinite(analysis2$td@data$shift_bf)] <- 1.0
+
+
     th <- max(node.depth.edgelength(analysis1$td@phylo))
 
     scalexformat <- function(x) sprintf("%.0f", th - abs(round(x, 1)))
@@ -119,7 +123,7 @@ foo <- function(fname, outname, width, height){
         aesthetics = "colour"
       ) +
       geom_point2(aes(subset=(shift_bf > significance_threshold)), size = 1.5, color = "black", fill = dot_color, shape = 21, stroke = 0.5) +
-      scale_x_continuous(labels = scalexformat) +
+      #scale_x_continuous(labels = scalexformat) +
       scale_x_reverse(labels = scalexformat) +
       theme(legend.position = "none") +
       coord_flip() +
@@ -156,7 +160,7 @@ foo <- function(fname, outname, width, height){
         aesthetics = "colour"
       ) +
       geom_point2(aes(subset=(shift_bf > significance_threshold)), size = 1.5, color = "black", fill = dot_color, shape = 21, stroke = 0.5) +
-      scale_x_continuous(labels = scalexformat) +
+      #scale_x_continuous(labels = scalexformat) +
       scale_x_reverse(labels = scalexformat) +
       theme(legend.position = "none") +
       coord_flip() +

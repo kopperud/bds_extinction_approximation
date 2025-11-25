@@ -480,10 +480,12 @@ df_allow = filter(x -> x[:rate_shifts] == "allow", dfx)
 df_disallow = filter(x -> x[:rate_shifts] == "disallow", dfx)
 
 ratios = df_disallow[!,:mean_extinction] ./ df_allow[!,:mean_extinction]
+ratios = df_disallow[!,:eta] ./ df_allow[!,:eta]
+eta_diff = df_disallow[!,:eta] .- df_allow[!,:eta]
 
-for (i, r) in enumerate(ratios)
-    if r > 1.5
-        println(i)
+for (i, r) in enumerate(eta_diff)
+    if r > 0.01
+        println(i, "\t", r)
     end
 end
 
@@ -493,6 +495,8 @@ baz(65, df_disallow, df_allow) ## Galliformes
 baz(98, df_disallow, df_allow)
 
 baz(55, df_disallow, df_allow)
+
+baz(84, df_disallow, df_allow)
 
 for (i, name) in enumerate(df_disallow[!,:name])
     println("$i:    $name")
